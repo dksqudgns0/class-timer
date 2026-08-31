@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>수업종료시간계산기</title>
+  <style>
+    body {
+      font-family: '맑은 고딕', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding-top: 30px;
+    }
+    .container {
+      width: 300px;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    input {
+      width: 80%;
+      padding: 6px;
+      text-align: center;
+      font-size: 14px;
+    }
+    button {
+      margin-top: 10px;
+      margin-bottom: 20px;
+      padding: 8px 24px;
+      font-size: 14px;
+      cursor: pointer;
+      background-color: #e0e0e0;
+      border: 1px solid #999;
+      border-radius: 4px;
+    }
+    #result {
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="form-group">
+    <label>전체 ppt [숫자]</label>
+    <input type="number" id="totalPpt">
+  </div>
+  <div class="form-group">
+    <label>현재 ppt [숫자]</label>
+    <input type="number" id="currentPpt">
+  </div>
+  <div class="form-group">
+    <label>시작시간 [4자리숫자, 24시간형식]</label>
+    <input type="text" id="startTime" maxlength="4">
+  </div>
+  <div class="form-group">
+    <label>쉬는시간 [숫자, 분]</label>
+    <input type="number" id="breakTime">
+  </div>
+
+  <button onclick="calculateEstimate()">estimate !</button>
+
+  <div id="result"></div>
+</div>
+
+<script>
+function calculateEstimate() {
+  const totalPpt = parseInt(document.getElementById('totalPpt').value, 10);
+  const currentPpt = parseInt(document.getElementById('currentPpt').value, 10);
+  const startTimeStr = document.getElementById('startTime').value.trim();
+  const breakTime = parseInt(document.getElementById('breakTime').value, 10);
+
+  if (isNaN(totalPpt) || isNaN(currentPpt) || isNaN(breakTime)) {
+    alert("모든 입력칸에 올바른 숫자를 입력하세요.");
+    return;
+  }
+  if (startTimeStr.length !== 4 || isNaN(startTimeStr)) {
+    alert("시작시간은 4자리 숫자로 입력해야 합니다.");
+    return;
+  }
+  if (currentPpt <= 0) {
+    alert("현재 ppt는 1 이상이어야 합니다.");
+    return;
+  }
+
+  const startHour = parseInt(startTimeStr.substring(0, 2), 10);
+  const startMinute = parseInt(startTimeStr.substring(2, 4), 10);
+
+  const now = new Date();
+  const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, 0, 0);
+
+  // 경과 초 계산 (시스템시간 - 시작시간 - 쉬는시간)
+  const elapsedSeconds = (now - startTime) / 1000 - (breakTime * 60);
+
+  if (elapsedSeconds <= 0) {
+    alert("경과시간이 0 또는 음수입니다. 시작시간을 확인하세요.");
+    return;
+  }
+
+  // 1. 진행 상황
+  const progressStr = `${currentPpt}/${totalPpt}`;
+
+  // 2. 소요 시간 (초 단위 올림, 시간 분)
+  const elapsedMinutesCeil = Math.ceil(elapsedSeconds / 60);
+  const elapsedHour = Math.floor(elapsedMinutesCeil / 60);
+  const elapsedMin = elapsedMinutesCeil % 60;
+  const elapsedStr = elapsedHour > 0 ? `${elapsedHour}시간 ${elapsedMin}분` : `${elapsedMin}분`;
+
+  // 3. ppt 1장 당 시간 (분 초)
+  const tppSeconds = elapsedSeconds / currentPpt;
+  const tppMin = Math.floor(tppSeconds / 60);
+  const tppSec = Math.floor(tppSeconds % 60);
+  const tppStr = `${tppMin}분 ${tppSec}초`;
+
+  // 4. 나머지 ppt
+  const remainingPpt = totalPpt - currentPpt;
+
+  // 5. 추가 시간 (초 단위 올림, 시간 분)
+  const addSeconds = remainingPpt * tppSeconds;
+  const addMinutesCeil = Math.ceil(addSeconds / 60);
+  const addHour = Math.floor(addMinutesCeil / 60);
+  const addMin = addMinutesCeil % 60;
+  const addStr = addHour > 0 ? `${addHour}시간 ${addMin}분` : `${addMin}분`;
+
+  // 6. 전체 시간 (소요시간 + 추가시간, 시간 분)
+  const totalMinutes = elapsedMinutesCeil + addMinutesCeil;
+  const totalHour = Math.floor(totalMinutes / 60);
+  const totalMin = totalMinutes % 60;
+  const totalStr = totalHour > 0 ? `${totalHour}시간 ${totalMin}분` : `${totalMin}분`;
+
+  // 7. 수업 종료 (시스템시간 + 추가시간, 시 분)
+  const endTime = new Date(now.getTime() + addMinutesCeil * 60000);
+  const endHour = String(endTime.getHours()).padStart(2, '0');
+  const endMin = String(endTime.getMinutes()).padStart(2, '0');
+  const endTimeStr = `${endHour}시 ${endMin}분`;
+
+  // 출력 텍스트 조합
+  const resultText = `진행 상황: ${progressStr}
+소요 시간: ${elapsedStr}
+ppt 1장 당 시간: ${tppStr}
+
+나머지 ppt: ${remainingPpt}
+추가 시간: ${addStr}
+전체 시간: ${totalStr}
+수업 종료: ${endTimeStr}`;
+
+  const clipboardText = `*** 수업종료시간계산기 ***
+
+${resultText}`;
+
+  // 화면 출력
+  document.getElementById('result').innerText = resultText;
+
+  // 클립보드 복사
+  navigator.clipboard.writeText(clipboardText).catch(() => {
+    // 구형 브라우저 호환
+    const textarea = document.createElement('textarea');
+    textarea.value = clipboardText;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  });
+}
+</script>
+
+</body>
+</html>
