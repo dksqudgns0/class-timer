@@ -150,7 +150,7 @@ function calculateEstimate() {
 
   // 8. 교수 평가
   const baseTime = classHours * 50;
-  const savedTime = baseTime - totalMinutes;
+  const savedTime = (baseTime - totalMinutes) / ( classHours ) ;
   let profEval = "";
   if (savedTime < 0) {
     profEval = "유급";
