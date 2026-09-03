@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -50,6 +51,10 @@
 
 <div class="container">
   <div class="form-group">
+    <label>수업 시수 [숫자]</label>
+    <input type="number" id="classHours">
+  </div>
+  <div class="form-group">
     <label>전체 ppt [숫자]</label>
     <input type="number" id="totalPpt">
   </div>
@@ -73,12 +78,13 @@
 
 <script>
 function calculateEstimate() {
+  const classHours = parseInt(document.getElementById('classHours').value, 10);
   const totalPpt = parseInt(document.getElementById('totalPpt').value, 10);
   const currentPpt = parseInt(document.getElementById('currentPpt').value, 10);
   const startTimeStr = document.getElementById('startTime').value.trim();
   const breakTime = parseInt(document.getElementById('breakTime').value, 10);
 
-  if (isNaN(totalPpt) || isNaN(currentPpt) || isNaN(breakTime)) {
+  if (isNaN(classHours) || isNaN(totalPpt) || isNaN(currentPpt) || isNaN(breakTime)) {
     alert("모든 입력칸에 올바른 숫자를 입력하세요.");
     return;
   }
@@ -142,6 +148,22 @@ function calculateEstimate() {
   const endMin = String(endTime.getMinutes()).padStart(2, '0');
   const endTimeStr = `${endHour}시 ${endMin}분`;
 
+  // 8. 교수 평가
+  const baseTime = classHours * 50;
+  const savedTime = baseTime - totalMinutes;
+  let profEval = "";
+  if (savedTime < 0) {
+    profEval = "유급";
+  } else if (savedTime < 5) {
+    profEval = "재시";
+  } else if (savedTime < 10) {
+    profEval = "사람";
+  } else if (savedTime < 20) {
+    profEval = "갓수";
+  } else {
+    profEval = "참스승";
+  }
+
   // 출력 텍스트 조합
   const resultText = `진행 상황: ${progressStr}
 소요 시간: ${elapsedStr}
@@ -150,7 +172,9 @@ ppt 1장 당 시간: ${tppStr}
 나머지 ppt: ${remainingPpt}
 추가 시간: ${addStr}
 전체 시간: ${totalStr}
-수업 종료: ${endTimeStr}`;
+수업 종료: ${endTimeStr}
+
+교수평가: ${profEval}`;
 
   const clipboardText = `*** 수업종료시간계산기 ***
 
@@ -174,3 +198,4 @@ ${resultText}`;
 
 </body>
 </html>
+
